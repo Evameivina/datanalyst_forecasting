@@ -47,18 +47,12 @@ df_filtered = df[
 # =========================
 # 3. Exploratory Analysis
 # =========================
-st.title("☀️ Solar Output Prediction Dashboard")
+st.title("Solar Output Prediction Dashboard")
 st.write("Dashboard ini menampilkan analisis dan prediksi Solar Output berdasarkan regresi linear.")
 
 # Ringkasan data
 st.subheader("Ringkasan Data")
 st.dataframe(df_filtered.head())
-
-# Korelasi
-st.subheader("Matriks Korelasi")
-fig_corr, ax_corr = plt.subplots(figsize=(6, 4))
-sns.heatmap(df_filtered.select_dtypes(include=np.number).corr(), annot=True, cmap="coolwarm", ax=ax_corr)
-st.pyplot(fig_corr)
 
 # Tren Solar Output
 st.subheader("Tren Solar Output per Waktu")
@@ -128,3 +122,4 @@ if len(df_filtered) > 10:
         st.success(f"Prediksi Solar Output: {pred_output:.3f} MWh")
 else:
     st.warning("Data terlalu sedikit untuk melatih model.")
+
