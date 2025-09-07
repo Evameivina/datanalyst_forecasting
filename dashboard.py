@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
+import matplotlib.dates as mdates
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -13,7 +13,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 # =========================
 @st.cache_data
 def load_data():
-    url = "http://raw.githubusercontent.com/Evameivina/datanalyst_forecasting/refs/heads/main/forecasting_dataset.csv"
+    url = "https://raw.githubusercontent.com/Evameivina/datanalyst_forecasting/refs/heads/main/forecasting_dataset.csv"
     df = pd.read_csv(url)
 
     # Konversi kolom Date
@@ -33,16 +33,30 @@ df = load_data()
 # 2. Sidebar Filter
 # =========================
 st.sidebar.header("Filter Data")
-year_filter = st.sidebar.multiselect("Pilih Tahun", options=sorted(df["Year"].unique()), default=sorted(df["Year"].unique()))
-month_filter = st.sidebar.multiselect("Pilih Bulan", options=sorted(df["Month"].unique()), default=sorted(df["Month"].unique()))
-irradiance_range = st.sidebar.slider("Rentang Irradiance (kWh/m²)", float(df["Irradiance (kWh/m²)"].min()), float(df["Irradiance (kWh/m²)"].max()), (float(df["Irradiance (kWh/m²)"].min()), float(df["Irradiance (kWh/m²)"].max())))
+year_filter = st.sidebar.multiselect(
+    "Pilih Tahun",
+    options=sorted(df["Year"].unique()),
+    default=sorted(df["Year"].unique())
+)
+month_filter = st.sidebar.multiselect(
+    "Pilih Bulan",
+    options=sorted(df["Month"].unique()),
+    default=sorted(df["Month"].unique())
+)
+irradiance_range = st.sidebar.slider(
+    "Rentang Irradiance (kWh/m²)",
+    float(df["Irradiance (kWh/m²)"].min()),
+    float(df["Irradiance (kWh/m²)"].max()),
+    (float(df["Irradiance (kWh/m²)"].min()), float(df["Irradiance (kWh/m²)"].max()))
+)
 
+# Filter data
 df_filtered = df[
     (df["Year"].isin(year_filter)) &
     (df["Month"].isin(month_filter)) &
     (df["Irradiance (kWh/m²)"] >= irradiance_range[0]) &
     (df["Irradiance (kWh/m²)"] <= irradiance_range[1])
-]
+].sort_values("Date")
 
 # =========================
 # 3. Exploratory Analysis
@@ -58,6 +72,12 @@ st.dataframe(df_filtered.head())
 st.subheader("Tren Solar Output per Waktu")
 fig_trend, ax_trend = plt.subplots(figsize=(8, 4))
 ax_trend.plot(df_filtered["Date"], df_filtered["Solar Output (MWh)"], marker="o", linestyle="-")
+
+# Format tanggal di sumbu X
+ax_trend.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+ax_trend.xaxis.set_major_locator(mdates.AutoDateLocator())
+plt.xticks(rotation=45, ha="right")
+
 ax_trend.set_xlabel("Tanggal")
 ax_trend.set_ylabel("Solar Output (MWh)")
 ax_trend.set_title("Tren Solar Output")
@@ -73,7 +93,7 @@ X = df_filtered[["Irradiance (kWh/m²)", "Temperature (°C)", "Humidity (%)", "Y
 y = df_filtered["Solar Output (MWh)"]
 
 # Train-Test Split
-if len(df_filtered) > 10:  
+if len(df_filtered) > 10:
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Model
@@ -85,7 +105,7 @@ if len(df_filtered) > 10:
 
     # Evaluasi
     mae = mean_absolute_error(y_test, y_pred)
-    rmse = np.sqrt(np.mean((y_test - y_pred) ** 2))
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     r2 = r2_score(y_test, y_pred)
 
     col1, col2, col3 = st.columns(3)
@@ -122,4 +142,3 @@ if len(df_filtered) > 10:
         st.success(f"Prediksi Solar Output: {pred_output:.3f} MWh")
 else:
     st.warning("Data terlalu sedikit untuk melatih model.")
-
